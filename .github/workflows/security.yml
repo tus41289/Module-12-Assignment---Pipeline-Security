@@ -1,34 +1,35 @@
 name: security
 on: [push, pull_request]
 
+# Least privilege: the token can only read the repo, nothing else
+permissions:
+  contents: read
+
 jobs:
-  # GATE: a found secret fails the build
   gitleaks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
-          fetch-depth: 0          # gitleaks scans full git history
+          fetch-depth: 0
       - name: Secret scan (Gitleaks)
         run: |
           docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:latest \
             detect --source /repo --verbose --redact --exit-code 1
 
-  # GATE: injectable code fails the build
   semgrep:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
       - name: SAST (Semgrep)
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" -w /src semgrep/semgrep \
             semgrep scan --config auto --error
 
-  # REPORT: surfaces vulnerable dependencies, never blocks
   trivy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
       - name: Dependency scan (Trivy)
         run: |
           docker run --rm -v "${{ github.workspace }}:/repo" aquasec/trivy:latest \
